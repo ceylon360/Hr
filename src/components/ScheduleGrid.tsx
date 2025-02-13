@@ -45,25 +45,23 @@ const ScheduleGrid = ({
 
   const [date, setDate] = useState<Date>(new Date());
 
+  const checkHoliday = (employeeId: string) => {
+    const holidays = loadFromLocalStorage("holidays") || [];
+    return holidays.some(
+      (holiday: any) =>
+        holiday.date &&
+        isSameDay(new Date(holiday.date), date) &&
+        holiday.employeeId === employeeId,
+    );
+  };
+
   const handleCellClick = (
     employeeIndex: number,
     hourIndex: number,
     color: string,
   ) => {
-    // Check if the employee has a holiday on this date
-    const holidays = loadFromLocalStorage("holidays") || [];
-    const employeeId = (employeeIndex + 1).toString(); // Convert to match the holiday employee IDs
-
-    const hasHoliday = holidays.some(
-      (holiday: any) =>
-        isSameDay(new Date(holiday.date), date) &&
-        holiday.employeeId === employeeId,
-    );
-
-    if (hasHoliday) {
-      return; // Don't allow scheduling on holiday
-    }
-
+    const employeeId = (employeeIndex + 1).toString();
+    if (checkHoliday(employeeId)) return;
     onCellClick(employeeIndex, hourIndex, color);
   };
 
@@ -98,7 +96,7 @@ const ScheduleGrid = ({
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={(date) => date && setDate(date)}
+                onSelect={(newDate) => newDate && setDate(newDate)}
                 initialFocus
               />
             </PopoverContent>
@@ -151,47 +149,41 @@ const ScheduleGrid = ({
           </tr>
         </thead>
         <tbody>
-          {employees.map((employee, employeeIndex) => (
-            <tr key={employee}>
-              <td className="p-2 border border-gray-200 font-medium text-sm md:text-base">
-                {employee}
-              </td>
-              {hours.map((_, hourIndex) => (
-                <td
-                  key={hourIndex}
-                  className={cn(
-                    "p-2 border border-gray-200 cursor-pointer transition-colors duration-200 hover:bg-gray-50",
-                    !gridColors[employeeIndex]?.[hourIndex] && "bg-gray-200",
-                  )}
-                  style={{
-                    backgroundColor: (() => {
-                      const holidays = loadFromLocalStorage("holidays") || [];
-                      const employeeId = (employeeIndex + 1).toString();
-                      const hasHoliday = holidays.some(
-                        (holiday: any) =>
-                          isSameDay(new Date(holiday.date), date) &&
-                          holiday.employeeId === employeeId,
-                      );
+          {employees.map((employee, employeeIndex) => {
+            const employeeId = (employeeIndex + 1).toString();
+            const hasHoliday = checkHoliday(employeeId);
 
-                      if (hasHoliday) {
-                        return "#6b7280"; // Gray color for holidays
-                      }
-                      return gridColors[employeeIndex]?.[hourIndex] || "";
-                    })(),
-                  }}
-                  onClick={() =>
-                    handleCellClick(
-                      employeeIndex,
-                      hourIndex,
-                      gridColors[employeeIndex]?.[hourIndex] || "",
-                    )
-                  }
-                >
-                  &nbsp;
+            return (
+              <tr key={employee}>
+                <td className="p-2 border border-gray-200 font-medium text-sm md:text-base">
+                  {employee}
                 </td>
-              ))}
-            </tr>
-          ))}
+                {hours.map((_, hourIndex) => (
+                  <td
+                    key={hourIndex}
+                    className={cn(
+                      "p-2 border border-gray-200 cursor-pointer transition-colors duration-200 hover:bg-gray-50",
+                      !gridColors[employeeIndex]?.[hourIndex] && "bg-gray-200",
+                    )}
+                    style={{
+                      backgroundColor: hasHoliday
+                        ? "#6b7280"
+                        : gridColors[employeeIndex]?.[hourIndex] || "",
+                    }}
+                    onClick={() =>
+                      handleCellClick(
+                        employeeIndex,
+                        hourIndex,
+                        gridColors[employeeIndex]?.[hourIndex] || "",
+                      )
+                    }
+                  >
+                    &nbsp;
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

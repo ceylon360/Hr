@@ -10,7 +10,17 @@ import { Employee, ColorTask } from "@/types/schema";
 export default function Settings() {
   const [employees, setEmployees] = useState<Employee[]>(
     loadFromLocalStorage("employees") || [
-      { id: "1", name: "Haridu", username: "haridu", password: "password123" },
+      {
+        id: "1",
+        name: "Haridu",
+        username: "haridu",
+        password: "password123",
+        leavePackage: {
+          personalLeavesPerMonth: 4,
+          holidaysPerMonth: 14,
+          sickLeavesPerYear: 7,
+        },
+      },
       {
         id: "2",
         name: "Sudhara",
@@ -42,6 +52,11 @@ export default function Settings() {
     name: "",
     username: "",
     password: "",
+    leavePackage: {
+      personalLeavesPerMonth: 0,
+      holidaysPerMonth: 0,
+      sickLeavesPerYear: 0,
+    },
   });
 
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -177,6 +192,72 @@ export default function Settings() {
                           })
                         }
                       />
+                      <div className="col-span-3 grid grid-cols-3 gap-2 mt-4">
+                        <div>
+                          <label className="text-sm font-medium">
+                            Personal Leaves/Month
+                          </label>
+                          <Input
+                            type="number"
+                            value={
+                              editingEmployee.leavePackage
+                                .personalLeavesPerMonth
+                            }
+                            onChange={(e) =>
+                              setEditingEmployee({
+                                ...editingEmployee,
+                                leavePackage: {
+                                  ...editingEmployee.leavePackage,
+                                  personalLeavesPerMonth:
+                                    parseInt(e.target.value) || 0,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">
+                            Holidays/Month
+                          </label>
+                          <Input
+                            type="number"
+                            value={
+                              editingEmployee.leavePackage.holidaysPerMonth
+                            }
+                            onChange={(e) =>
+                              setEditingEmployee({
+                                ...editingEmployee,
+                                leavePackage: {
+                                  ...editingEmployee.leavePackage,
+                                  holidaysPerMonth:
+                                    parseInt(e.target.value) || 0,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">
+                            Sick Leaves/Year
+                          </label>
+                          <Input
+                            type="number"
+                            value={
+                              editingEmployee.leavePackage.sickLeavesPerYear
+                            }
+                            onChange={(e) =>
+                              setEditingEmployee({
+                                ...editingEmployee,
+                                leavePackage: {
+                                  ...editingEmployee.leavePackage,
+                                  sickLeavesPerYear:
+                                    parseInt(e.target.value) || 0,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
                       <div className="col-span-3 flex gap-2 mt-2">
                         <Button
                           onClick={() => handleUpdateEmployee(editingEmployee)}

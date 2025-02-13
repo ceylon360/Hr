@@ -5,7 +5,21 @@ import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 
 import { TempoDevtools } from "tempo-devtools";
-TempoDevtools.init();
+import { disablePerformanceMonitoring } from "./utils/performanceUtils";
+
+// Disable performance monitoring before initializing Tempo
+disablePerformanceMonitoring();
+
+// Initialize Tempo with performance observer disabled and error handling
+TempoDevtools.init({
+  performance: {
+    disabled: true,
+  },
+  errorHandler: (error) => {
+    console.warn("Tempo error:", error);
+    return false; // Prevent default error handling
+  },
+});
 
 const basename = import.meta.env.BASE_URL;
 

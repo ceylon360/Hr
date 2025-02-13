@@ -38,8 +38,78 @@ export default function HolidayCalendar({
     "vacation",
   );
 
+  const checkLeaveAvailability = (
+    employeeId: string,
+    type: string,
+    dates: Date[],
+  ) => {
+    const employee = employees.find((emp) => emp.id === employeeId);
+    if (!employee) return { available: false, message: "Employee not found" };
+
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    // Get existing leaves for this month/year
+    const existingLeaves = holidays.filter((h) => {
+      const leaveDate = new Date(h.date);
+      return (
+        h.employeeId === employeeId &&
+        h.type === type &&
+        ((type === "sick" && leaveDate.getFullYear() === currentYear) ||
+          (type !== "sick" &&
+            leaveDate.getMonth() === currentMonth &&
+            leaveDate.getFullYear() === currentYear))
+      );
+    });
+
+    const existingCount = existingLeaves.length;
+    const newLeavesCount = dates.length;
+    const totalCount = existingCount + newLeavesCount;
+
+    switch (type) {
+      case "personal":
+        if (totalCount > employee.leavePackage.personalLeavesPerMonth) {
+          return {
+            available: false,
+            message: `Only ${employee.leavePackage.personalLeavesPerMonth - existingCount} personal leaves remaining this month`,
+          };
+        }
+        break;
+      case "vacation":
+        if (totalCount > employee.leavePackage.holidaysPerMonth) {
+          return {
+            available: false,
+            message: `Only ${employee.leavePackage.holidaysPerMonth - existingCount} holidays remaining this month`,
+          };
+        }
+        break;
+      case "sick":
+        if (totalCount > employee.leavePackage.sickLeavesPerYear) {
+          return {
+            available: false,
+            message: `Only ${employee.leavePackage.sickLeavesPerYear - existingCount} sick leaves remaining this year`,
+          };
+        }
+        break;
+    }
+
+    return { available: true, message: "" };
+  };
+
   const handleAddHoliday = () => {
     if (!selectedEmployee || selectedDates.length === 0) return;
+
+    const availability = checkLeaveAvailability(
+      selectedEmployee,
+      leaveType,
+      selectedDates,
+    );
+    if (!availability.available) {
+      alert(availability.message);
+      return;
+    }
+
     const newHolidays = selectedDates.map((date) => ({
       date,
       employeeId: selectedEmployee,
