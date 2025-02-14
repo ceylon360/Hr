@@ -1,52 +1,36 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Employee, TimeSlot } from "@/types/schema";
+import { Employee } from "@/types";
 
 export default function AdminPanel() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [newEmployee, setNewEmployee] = useState("");
-  const [newTimeSlot, setNewTimeSlot] = useState("");
 
-  useEffect(() => {
-    fetchEmployees();
-    fetchTimeSlots();
-  }, []);
-
-  const fetchEmployees = async () => {
-    const { data } = await supabase.from("employees").select("*");
-    if (data) setEmployees(data);
-  };
-
-  const fetchTimeSlots = async () => {
-    const { data } = await supabase.from("time_slots").select("*");
-    if (data) setTimeSlots(data);
-  };
-
-  const addEmployee = async () => {
+  const addEmployee = () => {
     if (!newEmployee) return;
-    await supabase.from("employees").insert([{ name: newEmployee }]);
+    const newId = (
+      Math.max(...employees.map((e) => parseInt(e.id)), 0) + 1
+    ).toString();
+    setEmployees([
+      ...employees,
+      {
+        id: newId,
+        name: newEmployee,
+        username: newEmployee.toLowerCase(),
+        password: "password123",
+        leavePackage: {
+          personalLeavesPerMonth: 4,
+          holidaysPerMonth: 14,
+          sickLeavesPerYear: 7,
+        },
+      },
+    ]);
     setNewEmployee("");
-    fetchEmployees();
   };
 
-  const removeEmployee = async (id: string) => {
-    await supabase.from("employees").delete().eq("id", id);
-    fetchEmployees();
-  };
-
-  const addTimeSlot = async () => {
-    if (!newTimeSlot) return;
-    await supabase.from("time_slots").insert([{ hour: newTimeSlot }]);
-    setNewTimeSlot("");
-    fetchTimeSlots();
-  };
-
-  const removeTimeSlot = async (id: string) => {
-    await supabase.from("time_slots").delete().eq("id", id);
-    fetchTimeSlots();
+  const removeEmployee = (id: string) => {
+    setEmployees(employees.filter((emp) => emp.id !== id));
   };
 
   return (
@@ -71,34 +55,6 @@ export default function AdminPanel() {
               <Button
                 variant="destructive"
                 onClick={() => removeEmployee(employee.id)}
-              >
-                Remove
-              </Button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Manage Time Slots</h2>
-        <div className="flex gap-2 mb-4">
-          <Input
-            value={newTimeSlot}
-            onChange={(e) => setNewTimeSlot(e.target.value)}
-            placeholder="New time slot (e.g., 9AM)"
-          />
-          <Button onClick={addTimeSlot}>Add</Button>
-        </div>
-        <div className="space-y-2">
-          {timeSlots.map((slot) => (
-            <div
-              key={slot.id}
-              className="flex justify-between items-center p-2 bg-gray-50 rounded"
-            >
-              <span>{slot.hour}</span>
-              <Button
-                variant="destructive"
-                onClick={() => removeTimeSlot(slot.id)}
               >
                 Remove
               </Button>
