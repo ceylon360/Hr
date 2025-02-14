@@ -1,12 +1,18 @@
 import { Suspense } from "react";
-import { useRoutes, Routes, Route, Navigate } from "react-router-dom";
-import { ClerkProvider } from "@clerk/clerk-react";
+import {
+  useRoutes,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
+import { ClerkProvider, SignedIn, SignedOut } from "@clerk/clerk-react";
 import Home from "./components/home";
 import HolidayCalendar from "./components/holidays/HolidayCalendar";
 import Settings from "./components/settings/Settings";
 import Layout from "./components/layout/Layout";
-import AdminProtectedRoute from "./components/auth/AdminProtectedRoute";
 import AdminSignIn from "./components/auth/AdminSignIn";
+import AuthGuard from "./components/auth/AuthGuard";
 import routes from "tempo-routes";
 
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -36,6 +42,8 @@ if (typeof window !== "undefined") {
 }
 
 function App() {
+  const navigate = useNavigate();
+
   return (
     <ErrorBoundary
       fallback={
@@ -51,7 +59,9 @@ function App() {
     >
       <ClerkProvider
         publishableKey={CLERK_PUBLISHABLE_KEY}
-        navigate={(to) => (window.location.href = to)}
+        navigate={(to) => navigate(to)}
+        afterSignInUrl="/settings"
+        afterSignUpUrl="/settings"
       >
         <Suspense fallback={<div>Loading...</div>}>
           <Layout>
@@ -60,11 +70,18 @@ function App() {
 
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/admin/sign-in" element={<AdminSignIn />} />
+              <Route
+                path="/admin/sign-in"
+                element={
+                  <SignedOut>
+                    <AdminSignIn />
+                  </SignedOut>
+                }
+              />
               <Route
                 path="/holidays"
                 element={
-                  <AdminProtectedRoute>
+                  <AuthGuard>
                     <HolidayCalendar
                       employees={[
                         {
@@ -124,15 +141,15 @@ function App() {
                         },
                       ]}
                     />
-                  </AdminProtectedRoute>
+                  </AuthGuard>
                 }
               />
               <Route
                 path="/settings"
                 element={
-                  <AdminProtectedRoute>
+                  <AuthGuard>
                     <Settings />
-                  </AdminProtectedRoute>
+                  </AuthGuard>
                 }
               />
               {/* Add a catch-all route that redirects to home */}

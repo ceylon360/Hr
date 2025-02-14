@@ -1,10 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
-import { CalendarDays, Calendar, Settings as SettingsIcon } from "lucide-react";
+import {
+  CalendarDays,
+  Calendar,
+  Settings as SettingsIcon,
+  LogOut,
+  UserCircle,
+} from "lucide-react";
+import { useClerk, SignedIn, SignedOut } from "@clerk/clerk-react";
 
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signOut } = useClerk();
 
   return (
     <header className="border-b bg-white">
@@ -41,6 +49,26 @@ export default function Header() {
               <SettingsIcon className="h-4 w-4" />
               Settings
             </Button>
+            <SignedIn>
+              <Button
+                variant="ghost"
+                onClick={() => signOut()}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </SignedIn>
+            <SignedOut>
+              <Button
+                variant="ghost"
+                onClick={() => navigate("/admin/sign-in")}
+                className="flex items-center gap-2"
+              >
+                <UserCircle className="h-4 w-4" />
+                Admin Login
+              </Button>
+            </SignedOut>
           </nav>
         </div>
       </div>

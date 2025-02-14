@@ -7,17 +7,19 @@ import { BrowserRouter } from "react-router-dom";
 import { TempoDevtools } from "tempo-devtools";
 import { disablePerformanceMonitoring } from "./utils/performanceUtils";
 
-// Disable performance monitoring before initializing Tempo
-disablePerformanceMonitoring();
-
-// Initialize Tempo with performance observer disabled and error handling
+// Initialize Tempo with performance monitoring disabled
 TempoDevtools.init({
   performance: {
     disabled: true,
+    observer: false,
   },
   errorHandler: (error) => {
+    // Only log critical errors
+    if (error?.message?.includes("PerformanceServerTiming")) {
+      return false;
+    }
     console.warn("Tempo error:", error);
-    return false; // Prevent default error handling
+    return false;
   },
 });
 

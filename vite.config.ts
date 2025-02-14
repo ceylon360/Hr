@@ -12,6 +12,10 @@ if (process.env.TEMPO === "true") {
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  optimizeDeps: {
+    entries: ["src/main.tsx", "src/tempobook/**/*"],
+    include: ["@clerk/clerk-react"],
+  },
   build: {
     rollupOptions: {
       onwarn(warning, warn) {
@@ -34,9 +38,6 @@ export default defineConfig({
     process.env.NODE_ENV === "development"
       ? "/"
       : process.env.VITE_BASE_PATH || "/",
-  optimizeDeps: {
-    entries: ["src/main.tsx", "src/tempobook/**/*"],
-  },
   plugins: [
     react({
       plugins: conditionalPlugins,
@@ -52,5 +53,8 @@ export default defineConfig({
   server: {
     // @ts-ignore
     allowedHosts: true,
+  },
+  define: {
+    __PERFORMANCE_MONITORING__: false,
   },
 });
