@@ -34,10 +34,7 @@ export default defineConfig({
       },
     },
   },
-  base:
-    process.env.NODE_ENV === "development"
-      ? "/"
-      : process.env.VITE_BASE_PATH || "/",
+  base: "/",
   plugins: [
     react({
       plugins: conditionalPlugins,
@@ -46,9 +43,7 @@ export default defineConfig({
   ],
   resolve: {
     preserveSymlinks: true,
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
+    alias: [{ find: "@", replacement: path.resolve(__dirname, "./src") }],
   },
   server: {
     // @ts-ignore
@@ -56,5 +51,7 @@ export default defineConfig({
   },
   define: {
     __PERFORMANCE_MONITORING__: false,
+    __SENTRY_DEBUG__: false,
+    __RRWEB_RECORDING__: false,
   },
 });
