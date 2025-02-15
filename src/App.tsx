@@ -23,27 +23,7 @@ if (!CLERK_PUBLISHABLE_KEY) {
 
 import ErrorBoundary from "./utils/errorBoundary";
 
-// Custom error handler for non-React errors
-const handleGlobalError = (error: Error) => {
-  console.error("Global error:", error);
-  // You can add additional error reporting here
-};
-
-// Add global error handlers
-if (typeof window !== "undefined") {
-  window.onerror = function (msg, url, lineNo, columnNo, error) {
-    handleGlobalError(error || new Error(String(msg)));
-    return false;
-  };
-
-  window.addEventListener("unhandledrejection", (event) => {
-    handleGlobalError(event.reason);
-  });
-}
-
 function App() {
-  const navigate = useNavigate();
-
   return (
     <ErrorBoundary
       fallback={
@@ -59,7 +39,7 @@ function App() {
     >
       <ClerkProvider
         publishableKey={CLERK_PUBLISHABLE_KEY}
-        navigate={(to) => navigate(to)}
+        routing="path"
         afterSignInUrl="/settings"
         afterSignUpUrl="/settings"
       >

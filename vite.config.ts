@@ -25,14 +25,7 @@ export default defineConfig({
         warn(warning);
       },
     },
-    // Improve error handling during build
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        drop_console: false, // Keep console.logs for debugging
-        pure_funcs: ["console.info", "console.debug", "console.trace"], // Remove other console methods
-      },
-    },
+    minify: true,
   },
   base: "/",
   plugins: [
