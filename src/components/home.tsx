@@ -1,80 +1,71 @@
 import React, { useState, useEffect } from "react";
-import { saveToLocalStorage, loadFromLocalStorage } from "@/lib/storage";
+import { useFirebaseSchedule } from "@/hooks/useFirebaseSchedule";
+import { useFirebaseColors } from "@/hooks/useFirebaseColors";
 import ColorPalette from "./ColorPalette";
 import ScheduleGrid from "./ScheduleGrid";
 
 const Home = () => {
-  const [selectedColor, setSelectedColor] = useState("green");
-  const [gridColors, setGridColors] = useState<string[][]>(
-    loadFromLocalStorage("gridColors") ||
-      Array(5)
-        .fill([])
-        .map(() => Array(9).fill("")),
-  );
-  const [colorCounts, setColorCounts] = useState<{ [key: string]: number }>(
-    loadFromLocalStorage("colorCounts") || {
-      green: 0,
-      blue: 0,
-      red: 0,
-      yellow: 0,
-      purple: 0,
-      gray: 0,
-    },
-  );
+  const [selectedColor, setSelectedColor] = useState("");
+  const { colors: colorTasks } = useFirebaseColors();
+  const [selectedDate] = useState(new Date());
+  const { schedules, loading, error, updateCell } =
+    useFirebaseSchedule(selectedDate);
+
+  // Convert schedules to grid format
+  const gridColors = Array(5)
+    .fill([])
+    .map(() => Array(9).fill(""));
+  schedules.forEach((schedule) => {
+    const employeeIndex = parseInt(schedule.employeeId) - 1;
+    if (employeeIndex >= 0 && employeeIndex < 5) {
+      gridColors[employeeIndex][schedule.hour] = schedule.color;
+    }
+  });
+  const [colorCounts, setColorCounts] = useState<{ [key: string]: number }>({});
+
+  // Initialize color counts when colorTasks change
+  useEffect(() => {
+    const initialCounts = {};
+    colorTasks.forEach((task) => {
+      initialCounts[task.name] = 0;
+    });
+    setColorCounts(initialCounts);
+  }, [colorTasks]);
 
   const handleColorSelect = (color: string) => {
     setSelectedColor(color);
   };
 
-  const handleCellClick = (employee: number, hour: number, _color: string) => {
-    const newColor =
-      selectedColor === "green"
-        ? "#22c55e"
-        : selectedColor === "blue"
-          ? "#3b82f6"
-          : selectedColor === "red"
-            ? "#ef4444"
-            : selectedColor === "yellow"
-              ? "#eab308"
-              : selectedColor === "purple"
-                ? "#a855f7"
-                : selectedColor === "gray"
-                  ? "#6b7280"
-                  : "";
+  const handleCellClick = async (
+    employee: number,
+    hour: number,
+    _color: string,
+  ) => {
+    const selectedTask = colorTasks.find((task) => task.name === selectedColor);
+    const newColor = selectedTask?.hex || "";
 
-    setGridColors((prev) => {
-      const newGrid = prev.map((row) => [...row]);
-      if (!newGrid[employee]) newGrid[employee] = [];
-      newGrid[employee][hour] = newColor;
-      saveToLocalStorage("gridColors", newGrid);
-      return newGrid;
-    });
+    await updateCell((employee + 1).toString(), hour, newColor);
   };
 
   // Update color counts whenever gridColors changes
   useEffect(() => {
-    const counts = {
-      green: 0,
-      blue: 0,
-      red: 0,
-      yellow: 0,
-      purple: 0,
-      gray: 0,
-    };
+    const counts = { ...colorCounts };
+    // Reset all counts
+    Object.keys(counts).forEach((key) => {
+      counts[key] = 0;
+    });
 
     gridColors.forEach((row) => {
       row.forEach((color) => {
-        if (color === "#22c55e") counts.green++;
-        else if (color === "#3b82f6") counts.blue++;
-        else if (color === "#ef4444") counts.red++;
-        else if (color === "#eab308") counts.yellow++;
-        else if (color === "#a855f7") counts.purple++;
-        else if (color === "#6b7280") counts.gray++;
+        const task = colorTasks.find((t) => t.hex === color);
+        if (task) {
+          counts[task.name]++;
+        }
       });
     });
 
     setColorCounts(counts);
-    saveToLocalStorage("colorCounts", counts);
+    // Color counts are calculated on the fly, no need to save
   }, [gridColors]);
 
   return (
