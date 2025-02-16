@@ -1,52 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { saveToLocalStorage, loadFromLocalStorage } from "@/lib/storage";
 import { Trash2, Plus } from "lucide-react";
-
+import { useFirebaseEmployees } from "@/hooks/useFirebaseEmployees";
+import { addColorTask, getColorTasks, deleteColorTask } from "@/lib/db";
 import { Employee, ColorTask } from "@/types/schema";
 
 export default function Settings() {
-  const [employees, setEmployees] = useState<Employee[]>(
-    loadFromLocalStorage("employees") || [
-      {
-        id: "1",
-        name: "Haridu",
-        username: "haridu",
-        password: "password123",
-        leavePackage: {
-          personalLeavesPerMonth: 4,
-          holidaysPerMonth: 14,
-          sickLeavesPerYear: 7,
-        },
-      },
-      {
-        id: "2",
-        name: "Sudhara",
-        username: "sudhara",
-        password: "password123",
-      },
-      {
-        id: "3",
-        name: "Chamara",
-        username: "chamara",
-        password: "password123",
-      },
-      {
-        id: "4",
-        name: "Shehani",
-        username: "shehani",
-        password: "password123",
-      },
-      {
-        id: "5",
-        name: "Sandipani",
-        username: "sandipani",
-        password: "password123",
-      },
-    ],
-  );
+  const {
+    employees,
+    loading: employeesLoading,
+    error: employeesError,
+    addEmployee: addEmployeeToDb,
+    updateEmployee: updateEmployeeInDb,
+    removeEmployee: removeEmployeeFromDb,
+  } = useFirebaseEmployees();
+
+  const [colors, setColors] = useState<ColorTask[]>([]);
+
+  useEffect(() => {
+    const loadColors = async () => {
+      const colorTasks = await getColorTasks();
+      setColors(colorTasks as ColorTask[]);
+    };
+    loadColors();
+  }, []);
 
   const [newEmployee, setNewEmployee] = useState({
     name: "",
@@ -60,62 +39,55 @@ export default function Settings() {
   });
 
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [colors, setColors] = useState<ColorTask[]>(
-    loadFromLocalStorage("colorTasks") || [
-      { name: "green", label: "Customer", hex: "#22c55e" },
-      { name: "blue", label: "Delivery", hex: "#3b82f6" },
-      { name: "red", label: "Bakery", hex: "#ef4444" },
-      { name: "yellow", label: "New", hex: "#eab308" },
-      { name: "purple", label: "Operation", hex: "#a855f7" },
-      { name: "gray", label: "Leave", hex: "#6b7280" },
-    ],
-  );
+
   const [newColorTask, setNewColorTask] = useState({
     name: "",
     label: "",
     hex: "#000000",
   });
 
-  const handleAddEmployee = () => {
+  const handleAddEmployee = async () => {
     if (newEmployee.name && newEmployee.username && newEmployee.password) {
-      const newId = (
-        Math.max(...employees.map((e) => parseInt(e.id)), 0) + 1
-      ).toString();
-      const updatedEmployees = [...employees, { ...newEmployee, id: newId }];
-      setEmployees(updatedEmployees);
-      saveToLocalStorage("employees", updatedEmployees);
-      setNewEmployee({ name: "", username: "", password: "" });
+      await addEmployeeToDb(newEmployee);
+      setNewEmployee({
+        name: "",
+        username: "",
+        password: "",
+        leavePackage: {
+          personalLeavesPerMonth: 0,
+          holidaysPerMonth: 0,
+          sickLeavesPerYear: 0,
+        },
+      });
     }
   };
 
-  const handleRemoveEmployee = (id: string) => {
-    const updatedEmployees = employees.filter((emp) => emp.id !== id);
-    setEmployees(updatedEmployees);
-    saveToLocalStorage("employees", updatedEmployees);
+  const handleRemoveEmployee = async (id: string) => {
+    await removeEmployeeFromDb(id);
   };
 
-  const handleUpdateEmployee = (employee: Employee) => {
-    const updatedEmployees = employees.map((emp) =>
-      emp.id === employee.id ? employee : emp,
-    );
-    setEmployees(updatedEmployees);
-    saveToLocalStorage("employees", updatedEmployees);
+  const handleUpdateEmployee = async (employee: Employee) => {
+    await updateEmployeeInDb(employee);
     setEditingEmployee(null);
   };
 
-  const handleAddColorTask = () => {
+  const handleAddColorTask = async () => {
     if (newColorTask.name && newColorTask.label && newColorTask.hex) {
-      const updatedColors = [...colors, newColorTask];
-      setColors(updatedColors);
-      saveToLocalStorage("colorTasks", updatedColors);
+      await addColorTask(newColorTask);
+      const updatedColors = await getColorTasks();
+      setColors(updatedColors as ColorTask[]);
       setNewColorTask({ name: "", label: "", hex: "#000000" });
     }
   };
 
-  const handleRemoveColorTask = (index: number) => {
-    const updatedColors = colors.filter((_, i) => i !== index);
-    setColors(updatedColors);
-    saveToLocalStorage("colorTasks", updatedColors);
+  const handleRemoveColorTask = async (id: string) => {
+    try {
+      await deleteColorTask(id);
+      const updatedColors = await getColorTasks();
+      setColors(updatedColors as ColorTask[]);
+    } catch (error) {
+      console.error("Failed to remove color task:", error);
+    }
   };
 
   return (
@@ -342,9 +314,9 @@ export default function Settings() {
               </Button>
             </div>
             <div className="space-y-2">
-              {colors.map((color, index) => (
+              {colors.map((color) => (
                 <div
-                  key={index}
+                  key={color.id}
                   className="flex justify-between items-center p-2 bg-gray-50 rounded-md"
                 >
                   <div className="flex items-center gap-2">
@@ -359,7 +331,7 @@ export default function Settings() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleRemoveColorTask(index)}
+                    onClick={() => handleRemoveColorTask(color.id)}
                   >
                     <Trash2 className="w-4 h-4 text-red-500" />
                   </Button>

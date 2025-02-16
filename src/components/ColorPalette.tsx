@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useFirebaseColors } from "@/hooks/useFirebaseColors";
 
 interface ColorPaletteProps {
   onColorSelect?: (color: string) => void;
@@ -7,21 +8,17 @@ interface ColorPaletteProps {
   colorCounts?: { [key: string]: number };
 }
 
-const colors = [
-  { name: "green", label: "Customer", hex: "#22c55e" },
-  { name: "blue", label: "Delivery", hex: "#3b82f6" },
-  { name: "red", label: "Bakery", hex: "#ef4444" },
-  { name: "yellow", label: "New", hex: "#eab308" },
-  { name: "purple", label: "Oparation", hex: "#a855f7" },
-  { name: "gray", label: "Leave", hex: "#6b7280" },
-];
-
 const ColorPalette = ({
   onColorSelect = () => {},
-  selectedColor = "green",
+  selectedColor = "",
   colorCounts = {},
 }: ColorPaletteProps) => {
+  const { colors, loading } = useFirebaseColors();
   const [activeColor, setActiveColor] = useState(selectedColor);
+
+  if (loading) {
+    return <div>Loading colors...</div>;
+  }
 
   const handleColorClick = (color: string) => {
     setActiveColor(color);

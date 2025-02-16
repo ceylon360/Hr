@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useFirebaseEmployees } from "@/hooks/useFirebaseEmployees";
 import { cn } from "@/lib/utils";
 import { Clock, CalendarIcon, Calendar as CalendarIcon2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,15 +23,8 @@ const ScheduleGrid = ({
   gridColors = [],
 }: ScheduleGridProps) => {
   const navigate = useNavigate();
-  const [employees] = useState<string[]>(
-    loadFromLocalStorage("employees") || [
-      "Haridu",
-      "Sudhara",
-      "Chamara",
-      "Shehani",
-      "Sandipani",
-    ],
-  );
+  const { employees } = useFirebaseEmployees();
+  const employeeNames = employees.map((emp) => emp.name);
   const [hours, setHours] = useState([
     "9AM",
     "10AM",
@@ -149,7 +143,7 @@ const ScheduleGrid = ({
           </tr>
         </thead>
         <tbody>
-          {employees.map((employee, employeeIndex) => {
+          {employeeNames.map((employee, employeeIndex) => {
             const employeeId = (employeeIndex + 1).toString();
             const hasHoliday = checkHoliday(employeeId);
 

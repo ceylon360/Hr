@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LeaveStats from "./LeaveStats";
-import { saveToLocalStorage, loadFromLocalStorage } from "@/lib/storage";
+import { addHoliday, getHolidays } from "@/lib/db";
+import { useFirebaseEmployees } from "@/hooks/useFirebaseEmployees";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,22 +19,21 @@ interface Holiday {
   type: "vacation" | "sick" | "personal";
 }
 
-interface HolidayCalendarProps {
-  employees: { id: string; name: string }[];
-}
+interface HolidayCalendarProps {}
 
-export default function HolidayCalendar({
-  employees = [],
-}: HolidayCalendarProps) {
+export default function HolidayCalendar() {
+  const { employees } = useFirebaseEmployees();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [holidays, setHolidays] = useState<Holiday[]>(() => {
-    const savedHolidays = loadFromLocalStorage("holidays") || [];
-    return savedHolidays.map((h) => ({
-      ...h,
-      date: new Date(h.date),
-    }));
-  });
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+
+  useEffect(() => {
+    const loadHolidays = async () => {
+      const data = await getHolidays();
+      setHolidays(data);
+    };
+    loadHolidays();
+  }, []);
   const [leaveType, setLeaveType] = useState<"vacation" | "sick" | "personal">(
     "vacation",
   );
@@ -97,7 +97,7 @@ export default function HolidayCalendar({
     return { available: true, message: "" };
   };
 
-  const handleAddHoliday = () => {
+  const handleAddHoliday = async () => {
     if (!selectedEmployee || selectedDates.length === 0) return;
 
     const availability = checkLeaveAvailability(
@@ -115,9 +115,11 @@ export default function HolidayCalendar({
       employeeId: selectedEmployee,
       type: leaveType,
     }));
-    const updatedHolidays = [...holidays, ...newHolidays];
+    for (const holiday of newHolidays) {
+      await addHoliday(holiday);
+    }
+    const updatedHolidays = await getHolidays();
     setHolidays(updatedHolidays);
-    saveToLocalStorage("holidays", updatedHolidays);
     setSelectedDates([]);
   };
 
