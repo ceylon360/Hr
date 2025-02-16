@@ -59,7 +59,7 @@ function App() {
     >
       <ClerkProvider
         publishableKey={CLERK_PUBLISHABLE_KEY}
-        navigate={(to) => navigate(to)}
+        routing="path"
         afterSignInUrl="/settings"
         afterSignUpUrl="/settings"
       >
@@ -82,65 +82,7 @@ function App() {
                 path="/holidays"
                 element={
                   <AuthGuard>
-                    <HolidayCalendar
-                      employees={[
-                        {
-                          id: "1",
-                          name: "Haridu",
-                          username: "haridu",
-                          password: "password123",
-                          leavePackage: {
-                            personalLeavesPerMonth: 4,
-                            holidaysPerMonth: 14,
-                            sickLeavesPerYear: 7,
-                          },
-                        },
-                        {
-                          id: "2",
-                          name: "Sudhara",
-                          username: "sudhara",
-                          password: "password123",
-                          leavePackage: {
-                            personalLeavesPerMonth: 4,
-                            holidaysPerMonth: 14,
-                            sickLeavesPerYear: 7,
-                          },
-                        },
-                        {
-                          id: "3",
-                          name: "Chamara",
-                          username: "chamara",
-                          password: "password123",
-                          leavePackage: {
-                            personalLeavesPerMonth: 4,
-                            holidaysPerMonth: 14,
-                            sickLeavesPerYear: 7,
-                          },
-                        },
-                        {
-                          id: "4",
-                          name: "Shehani",
-                          username: "shehani",
-                          password: "password123",
-                          leavePackage: {
-                            personalLeavesPerMonth: 4,
-                            holidaysPerMonth: 14,
-                            sickLeavesPerYear: 7,
-                          },
-                        },
-                        {
-                          id: "5",
-                          name: "Sandipani",
-                          username: "sandipani",
-                          password: "password123",
-                          leavePackage: {
-                            personalLeavesPerMonth: 4,
-                            holidaysPerMonth: 14,
-                            sickLeavesPerYear: 7,
-                          },
-                        },
-                      ]}
-                    />
+                    <HolidayCalendar />
                   </AuthGuard>
                 }
               />

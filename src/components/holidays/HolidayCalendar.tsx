@@ -30,7 +30,13 @@ export default function HolidayCalendar() {
   useEffect(() => {
     const loadHolidays = async () => {
       const data = await getHolidays();
-      setHolidays(data);
+      setHolidays(
+        data.map((holiday) => ({
+          ...holiday,
+          employeeId: holiday.employeeId || "",
+          type: holiday.type || "vacation",
+        })),
+      );
     };
     loadHolidays();
   }, []);
@@ -118,8 +124,14 @@ export default function HolidayCalendar() {
     for (const holiday of newHolidays) {
       await addHoliday(holiday);
     }
-    const updatedHolidays = await getHolidays();
-    setHolidays(updatedHolidays);
+    const data = await getHolidays();
+    setHolidays(
+      data.map((holiday) => ({
+        ...holiday,
+        employeeId: holiday.employeeId || "",
+        type: holiday.type || "vacation",
+      })),
+    );
     setSelectedDates([]);
   };
 

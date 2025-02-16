@@ -41,10 +41,11 @@ export const getEmployees = async () => {
 
 // Holidays
 export const addHoliday = async (holiday: Omit<Holiday, "id">) => {
-  return addDoc(collection(db, HOLIDAYS), {
+  const holidayData = {
     ...holiday,
     date: holiday.date.toISOString(),
-  });
+  };
+  return addDoc(collection(db, HOLIDAYS), holidayData);
 };
 
 export const getHolidays = async () => {
@@ -53,17 +54,20 @@ export const getHolidays = async () => {
     id: doc.id,
     ...doc.data(),
     date: new Date(doc.data().date),
-  }));
+  })) as Holiday[];
 };
 
 // Color Tasks
-export const addColorTask = async (colorTask: ColorTask) => {
+export const addColorTask = async (colorTask: Omit<ColorTask, "id">) => {
   return addDoc(collection(db, COLOR_TASKS), colorTask);
 };
 
 export const getColorTasks = async () => {
   const snapshot = await getDocs(collection(db, COLOR_TASKS));
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as ColorTask[];
 };
 
 export const deleteColorTask = async (id: string) => {
@@ -72,38 +76,50 @@ export const deleteColorTask = async (id: string) => {
 
 // Schedules
 export interface ScheduleEntry {
+  id?: string;
   employeeId: string;
   hour: number;
   color: string;
   date: Date;
 }
 
-export const updateSchedule = async (schedule: ScheduleEntry) => {
-  const { employeeId, hour, date } = schedule;
+export const updateSchedule = async (
+  scheduleData: Omit<ScheduleEntry, "id">,
+) => {
+  const { employeeId, hour, date } = scheduleData;
+  const dateStr = date.toISOString().split("T")[0];
+
   const q = query(
     collection(db, SCHEDULES),
     where("employeeId", "==", employeeId),
     where("hour", "==", hour),
-    where("date", "==", date.toISOString().split("T")[0]),
+    where("date", "==", dateStr),
   );
 
   const snapshot = await getDocs(q);
+
+  const scheduleDoc = {
+    ...scheduleData,
+    date: dateStr,
+  };
+
   if (!snapshot.empty) {
-    return updateDoc(doc(db, SCHEDULES, snapshot.docs[0].id), schedule);
+    return updateDoc(doc(db, SCHEDULES, snapshot.docs[0].id), scheduleDoc);
   }
-  return addDoc(collection(db, SCHEDULES), {
-    ...schedule,
-    date: date.toISOString().split("T")[0],
-  });
+
+  return addDoc(collection(db, SCHEDULES), scheduleDoc);
 };
 
 export const getScheduleForDate = async (date: Date) => {
-  const q = query(
-    collection(db, SCHEDULES),
-    where("date", "==", date.toISOString().split("T")[0]),
-  );
+  const dateStr = date.toISOString().split("T")[0];
+  const q = query(collection(db, SCHEDULES), where("date", "==", dateStr));
+
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+    date: new Date(doc.data().date),
+  })) as ScheduleEntry[];
 };
 
 // Real-time subscriptions
@@ -111,16 +127,15 @@ export const subscribeToSchedule = (
   date: Date,
   callback: (data: ScheduleEntry[]) => void,
 ) => {
-  const q = query(
-    collection(db, SCHEDULES),
-    where("date", "==", date.toISOString().split("T")[0]),
-  );
+  const dateStr = date.toISOString().split("T")[0];
+  const q = query(collection(db, SCHEDULES), where("date", "==", dateStr));
 
   return onSnapshot(q, (snapshot) => {
     const schedules = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));
-    callback(schedules as ScheduleEntry[]);
+      date: new Date(doc.data().date),
+    })) as ScheduleEntry[];
+    callback(schedules);
   });
 };

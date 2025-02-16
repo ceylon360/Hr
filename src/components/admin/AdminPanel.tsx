@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { addEmployee, deleteEmployee, getEmployees } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Employee, TimeSlot } from "@/types/schema";
+import { Employee } from "@/types/schema";
+
+interface TimeSlot {
+  id: string;
+  hour: string;
+}
 
 export default function AdminPanel() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -16,8 +21,8 @@ export default function AdminPanel() {
   }, []);
 
   const fetchEmployees = async () => {
-    const { data } = await supabase.from("employees").select("*");
-    if (data) setEmployees(data);
+    const data = await getEmployees();
+    setEmployees(data);
   };
 
   const fetchTimeSlots = async () => {
@@ -25,15 +30,24 @@ export default function AdminPanel() {
     if (data) setTimeSlots(data);
   };
 
-  const addEmployee = async () => {
+  const handleAddEmployee = async () => {
     if (!newEmployee) return;
-    await supabase.from("employees").insert([{ name: newEmployee }]);
+    await addEmployee({
+      name: newEmployee,
+      username: newEmployee.toLowerCase(),
+      password: "default123",
+      leavePackage: {
+        personalLeavesPerMonth: 2,
+        holidaysPerMonth: 1,
+        sickLeavesPerYear: 5,
+      },
+    });
     setNewEmployee("");
     fetchEmployees();
   };
 
   const removeEmployee = async (id: string) => {
-    await supabase.from("employees").delete().eq("id", id);
+    await deleteEmployee(id);
     fetchEmployees();
   };
 
@@ -59,7 +73,7 @@ export default function AdminPanel() {
             onChange={(e) => setNewEmployee(e.target.value)}
             placeholder="New employee name"
           />
-          <Button onClick={addEmployee}>Add</Button>
+          <Button onClick={handleAddEmployee}>Add</Button>
         </div>
         <div className="space-y-2">
           {employees.map((employee) => (
